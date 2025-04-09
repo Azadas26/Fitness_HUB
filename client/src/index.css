@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit&family=Poppins&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* h2 - using Outfit */
+h2 {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* h3 - using Poppins */
+h3 {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Hide scrollbar styling */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
