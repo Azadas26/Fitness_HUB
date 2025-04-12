@@ -14,7 +14,8 @@ const UserSchema = new mongoose.Schema({
     height: { type: Number, default: null },
     weight: { type: Number, default: null },
     bmi: { type: Number, default: null },
-    wrkpage: { type: Number, default: 1 }
+    wrkpage: { type: Number, default: 1 },
+    role: { type: String, required: true, default: "user" }
 })
 
 UserSchema.methods.Getjwt = async function () {

@@ -1,7 +1,8 @@
 import express from 'express';
 import { LoginValidation, registerValidation } from '../middlewares/authValidation.js';
 import { getUserDetails, isUserauthenticatedornot, login, logout, register, resetPassword,
-     sendRestOtp, sendVerificationOtp, verifyEmail,updateBMIratio,updateWorkPage,getUserWorkoutList } from '../middlewares/authControllers.js';
+     sendRestOtp, sendVerificationOtp, verifyEmail,updateBMIratio,
+     updateWorkPage,getUserWorkoutList,setUserTasks,assignDoctor,getDoctorMessages,sendDoctorMessages } from '../middlewares/authControllers.js';
 import { isuserauth } from '../middlewares/isUserAuth.js';
 import UserModel from '../models/userModels.js';
 
@@ -26,6 +27,10 @@ router.patch('/updateBMIratio',isuserauth,updateBMIratio)
 
 router.patch("/updateWorkPage/:page",isuserauth,updateWorkPage)
 router.get("/getUserWorkoutList/:page",isuserauth,getUserWorkoutList)
+router.get("/setUserTasks/:wrkId/:day",isuserauth,setUserTasks)
 
+router.get("/assignDoctor",isuserauth,assignDoctor)
+router.get("/getDoctorMessages",isuserauth,getDoctorMessages)
+router.patch("/sendDoctorMessages",isuserauth,sendDoctorMessages)
 
 export default router;

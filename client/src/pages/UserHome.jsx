@@ -27,6 +27,9 @@ const UserHome = () => {
     const [bmiDetails, setBMIDetails] = useState(null);
     const [bmiError, setBmiError] = useState(false);
     const [rerender, setRerender] = useState(false);
+    const [chatmMssage, setChatMessage] = useState([]);
+    const [doctorName, setDoctorName] = useState(null);
+    const [chatInput, setChatInput] = useState('')
 
     const scrollRef = useRef();
     const navigate = useNavigate()
@@ -104,44 +107,60 @@ const UserHome = () => {
         if (userData?.bmi === null || userData?.bmi === undefined) {
             toast.error("Calculate your BMI ratio")
             return;
-        }else{
+        } else {
             navigate('/dailySessions')
         }
     }
 
+    const assignDoctor = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/assignDoctor`, { withCredentials: true })
 
-    const messages = [
-        { text: "Hey, how are you?", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, gthdgh!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, gthdgh!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "Doing great, thanks!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, gthdgh!", sender: "receiver" },
-        { text: "I'm good! What about you?", sender: "sender" },
-        { text: "Doing great, thanks!", sender: "receiver" },
+        } catch (error) {
+            console.log(error);
+            setShowMessagePopup(false)
+            toast.error(error.response.data.message || error.message);
+        }
+        return;
+    }
 
-    ];
+    const getDeoctorMessages = async () => {
+        try {
+
+            const { data } = await axios.get(`${backendUrl}/getDoctorMessages`, { withCredentials: true })
+
+            console.log("DoctorChats", data);
+            setDoctorName(data?.messageDetails?.doctorId?.name)
+            console.log("mmmm", data?.messageDetails?.messages);
+
+            setChatMessage(data?.messageDetails?.messages)
+
+        } catch (error) {
+            console.log(error);
+            toast.error(error.response.data.message || error.message);
+        }
+    }
+
+    const sendMessage = async () => {
+        try {
+
+            if (chatInput === '') {
+                toast.error("Input Box empty")
+            }
+
+            const { data } = await axios.patch(`${backendUrl}/sendDoctorMessages`, { message: chatInput }, { withCredentials: true })
+
+            setChatInput('')
+            setChatMessage([...chatmMssage, data?.text])
+        } catch (error) {
+            console.log(error);
+
+        }
+    }
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [chatmMssage]);
 
 
 
@@ -321,7 +340,7 @@ const UserHome = () => {
                 <div className='flex flex-wrap justify-center gap-16 max-w-7xl w-full'>
 
                     {/* CARD 1 */}
-                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
+                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] hover:scale-105 bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
                         <div className='flex justify-between items-center'>
                             <h2 className='font-outfit text-gray-900 text-[20px] font-extrabold'>Fithub</h2>
                             <p className='text-gray-400 text-[11px] font-extrabold tracking-widest'>SKIP</p>
@@ -345,7 +364,7 @@ const UserHome = () => {
                     </div>
 
                     {/* CARD 2 */}
-                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
+                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] hover:scale-105 bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
                         <div className='flex justify-between items-center'>
                             <h2 className='font-outfit text-gray-900 text-[20px] font-extrabold'>Fithub</h2>
                             <p className='text-gray-400 text-[11px] font-extrabold tracking-widest'>SKIP</p>
@@ -369,7 +388,7 @@ const UserHome = () => {
                     </div>
 
                     {/* CARD 3 */}
-                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
+                    <div className='w-[80%] sm:w-[80%] md:w-[45%] lg:w-[30%] hover:scale-105 bg-[#f3f3f3] p-5 flex flex-col justify-between gap-7'>
                         <div className='flex justify-between items-center'>
                             <h2 className='font-outfit text-gray-900 text-[20px] font-extrabold'>Fithub</h2>
                             <p className='text-gray-400 text-[11px] font-extrabold tracking-widest'>SKIP</p>
@@ -428,15 +447,23 @@ const UserHome = () => {
 
 
             {/* Floating Message Icon */}
-            <div
-                className='h-[50px] w-[50px] rounded-full fixed right-3 lg:right-10 bottom-10 flex items-center justify-center animate-bounceFast2 cursor-pointer z-50'
-                onClick={() => setShowMessagePopup(true)}
-            >
-                <TbMessages
-                    className='w-full h-full text-[#5d1be5] scale-x-[-1]'
-                    style={{ textShadow: "12px 12px 24px rgba(0, 0, 0, 0.3)" }}
-                />
-            </div>
+            {
+
+                userData?.role === "user" && <div
+                    className='h-[50px] w-[50px] rounded-full fixed right-3 lg:right-10 bottom-10 flex items-center justify-center animate-bounceFast2 cursor-pointer z-50'
+                    onClick={async () => {
+                        setShowMessagePopup(true)
+                        await assignDoctor()
+                        getDeoctorMessages()
+                    }}
+                >
+                    <TbMessages
+                        className='w-full h-full text-[#5d1be5] scale-x-[-1]'
+                        style={{ textShadow: "12px 12px 24px rgba(0, 0, 0, 0.3)" }}
+                    />
+                </div>
+            }
+
 
             {/* Popup Modal */}
             {showMessagePopup && (
@@ -448,7 +475,7 @@ const UserHome = () => {
 
                     <div className="relative bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-md z-50 animate-fadeIn">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-[#5d1be5]">Message</h2>
+                            <h2 className="text-xl font-bold text-[#5d1be5]">Chat With Doctor</h2>
                             <button
                                 className="text-gray-500 hover:text-red-500 text-xl"
                                 onClick={() => setShowMessagePopup(false)}
@@ -457,23 +484,24 @@ const UserHome = () => {
                             </button>
                         </div>
                         <div className=" max-w-md mx-auto p-4 border text-center rounded-xl shadow-lg bg-gray-50">
-                            <h2 className="text-center text-xl font-bold mb-4">Chat With Doctor</h2>
-                            <p className='text-gray-400 text-xs italic font-extrabold'>Here you can ask this doctor about your BMI count, diet, health condition, workout plan, etc.
+
+                            <h2 className="text-center text-xl font-bold mb-4">Dr. {doctorName}</h2>
+                            <p className='text-gray-400 text-xs italic font-extrabold mb-4'>Here you can ask this doctor about your BMI count, diet, health condition, workout plan, etc.
                                 He will reply when he is available.</p>
 
                             <div className="h-[300px] max-h-[300px] overflow-y-scroll hide-scrollbar space-y-3 px-4 py-2 ">
-                                {messages.map((msg, index) => (
+                                {chatmMssage.map((msg, index) => (
                                     <div
                                         key={index}
-                                        className={`flex ${msg.sender === "sender" ? "justify-end" : "justify-start"}`}
+                                        className={`flex ${msg.isdoctor != true ? "justify-end" : "justify-start"}`}
                                     >
                                         <div
-                                            className={`px-3 py-2 rounded-2xl max-w-xs w-fit ${msg.sender === "sender"
+                                            className={`px-3 py-2 rounded-2xl max-w-xs w-fit ${msg.isdoctor != true
                                                 ? "bg-blue-400 text-white rounded-br-sm"
                                                 : "bg-gray-200 text-gray-800 rounded-bl-sm"
                                                 }`}
                                         >
-                                            {msg.text}
+                                            {msg.message}
                                         </div>
                                     </div>
                                 ))}
@@ -488,12 +516,23 @@ const UserHome = () => {
                                 <input
                                     type="text"
                                     placeholder="Type a message..."
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    value={chatInput}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            sendMessage();
+                                        }
+                                    }}
                                     className="flex-1 px-3 py-1 text-sm border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
-                                <button className="text-sm bg-[#ff5520] text-white px-2 py-1 rounded-full">
+                                <button
+                                    className="text-sm bg-[#ff5520] text-white px-2 py-1 rounded-full"
+                                    onClick={sendMessage}
+                                >
                                     <IoMdSend />
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>

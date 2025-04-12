@@ -14,7 +14,8 @@ import { toast } from 'react-hot-toast';
 import { PiMaskSadLight } from "react-icons/pi";
 
 const DailySessions = () => {
-    const [toggles, setToggles] = useState(Array(10).fill(false));
+    const [toggles, setToggles] = useState([]); // Initially empty
+    //const [toggles, setToggles] = useState(Array(10).fill(false)); 
     const [showMessagePopup, setShowMessagePopup] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [showFormPopup, setShowFormPopup] = useState(false);
@@ -31,6 +32,7 @@ const DailySessions = () => {
     const [daySelectedIndex, setDaySelectedIndex] = useState(1)
     const [Drefresh, setDrefresh] = useState(false)
     const [workoutList, setWorkoutList] = useState(null)
+    const [completepersentage, setCompletionPersantage] = useState(0)
 
 
     const { userData, backendUrl, refresh, setRefresh } = useContext(AppContent);
@@ -38,11 +40,39 @@ const DailySessions = () => {
     const navigate = useNavigate();
 
 
-    const handleToggle = (e, index) => {
+    const handleToggle = async (e, index, wrkId) => {
         e.stopPropagation();
         const updatedToggles = [...toggles];
         updatedToggles[index] = !updatedToggles[index];
         setToggles(updatedToggles);
+
+        try {
+            const { data } = await axios.get(
+                `${backendUrl}/setUserTasks/${wrkId}/${daySelectedIndex}`, { withCredentials: true }
+            );
+            console.log("setUserTasks", data);
+            if (data?.message === "Pending") {
+                toast(`Task ${(index + 1)} marked as pending 💤`, {
+                    icon: "⏳",
+                });
+
+            } else {
+                toast.success("Now Task " + (index + 1) + " " + data?.message)
+            }
+
+            const truethValues = updatedToggles.filter(item => item === true);
+
+            const completionPercentage = (truethValues.length / workoutList.workouts.length) * 100;
+
+            console.log("Boyyyeeee", completionPercentage);
+
+
+            setCompletionPersantage(completionPercentage)
+
+        } catch (error) {
+            console.log(error);
+
+        }
     };
 
     const handleCardClick = (index) => {
@@ -50,12 +80,15 @@ const DailySessions = () => {
         setShowMessagePopup(true);
     };
 
-    const percentage = 75;
+
     const radius = 50;
     const stroke = 8;
     const normalizedRadius = radius - stroke * 0.5;
     const circumference = normalizedRadius * 2 * Math.PI;
-    const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+    // Prevent NaN by setting a fallback
+    const safeCompletion = isNaN(completepersentage) ? 0 : completepersentage;
+    const strokeDashoffset = circumference - (safeCompletion / 100) * circumference;
 
     const scrollRef = useRef(null);
 
@@ -68,7 +101,7 @@ const DailySessions = () => {
     };
 
     useEffect(() => {
-        console.log("userData userData", userData);
+        //console.log("userData userData", userData);
         getUserWorkoutList(daySelectedIndex)
         //console.log("Selected index changed to:", daySelectedIndex);
     }, [daySelectedIndex, Drefresh]);
@@ -87,14 +120,14 @@ const DailySessions = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("data data", formData, daySelectedIndex);
+        //console.log("data data", formData, daySelectedIndex);
 
         try {
             const { data } = await axios.post(
                 `${backendUrl}/admin/addWorkoutList/${daySelectedIndex}`,
                 formData, { withCredentials: true }
             );
-            console.log("dddd", data); // ✅ Success message
+            // console.log("dddd", data); // ✅ Success message
             setFormData({
                 workoutName: "",
                 instruction1: "",
@@ -123,7 +156,7 @@ const DailySessions = () => {
             const { data } = await axios.patch(
                 `${backendUrl}/updateWorkPage/${index}`, {}, { withCredentials: true }
             );
-            console.log(data);
+            //  console.log(data);
 
         } catch (error) {
             console.log(error);
@@ -135,21 +168,61 @@ const DailySessions = () => {
     const getUserWorkoutList = async (page) => {
         try {
             const { data } = await axios.get(
-                `${backendUrl}/getUserWorkoutList/${page}`, { withCredentials: true }
+                `${backendUrl}/getUserWorkoutList/${page}`,
+                { withCredentials: true }
             );
-            console.log("Azad iii SIM", data);
-            setWorkoutList(data?.workouts)
+
+            if (!data?.success) {
+                console.log("Workout not found or error:", data);
+                setWorkoutList(null); // optional: clear previous workouts
+                setToggles([]);
+                setCompletionPersantage(0);
+                return;
+            }
+
+            setWorkoutList(data.workouts);
+
+            const workouts = data?.workouts?.workouts || [];
+            const activedToggles = workouts.map(item => !!item.isActived);
+            const completedCount = activedToggles.filter(Boolean).length;
+            const completionPercentage = (completedCount / workouts.length) * 100;
+
+            setToggles(activedToggles);
+            setCompletionPersantage(completionPercentage);
+
+            console.log("Toggles:", activedToggles);
+            console.log("Completion %:", completionPercentage.toFixed(2));
+
+        } catch (error) {
+            console.error("Error fetching workouts:", error);
+            // Optionally show a toast
+            toast.error("Failed to load workout list");
+        }
+    };
+
+
+
+    const deleteWorkout = async (day, id) => {
+        //console.log("Day", day, "ID", id);
+        try {
+            const { data } = await axios.patch(
+                `${backendUrl}/admin/deletWorkout`, { day: day, Id: id }, { withCredentials: true }
+            );
+            // console.log("Deleteee, data");
+            setDrefresh(!Drefresh)
+            toast.success(data?.message)
 
         } catch (error) {
             console.log(error);
 
         }
+
     }
 
     useEffect(() => {
         setDaySelectedIndex(userData?.wrkpage)
         getUserWorkoutList(userData?.wrkpage)
-        console.log("Selected index changed to:", daySelectedIndex);
+        //e.log("Selected index changed to:", daySelectedIndex);
     }, []);
 
     return (
@@ -157,20 +230,48 @@ const DailySessions = () => {
             {/* Greeting Section */}
             <div className='relative w-auto flex flex-col items-center justify-center h-auto mt-10 lg:mt-20'>
                 <div className='text-center flex flex-col items-center justify-center'>
-                    <h2 className='text-3xl sm:text-5xl font-semibold mb-4'>Hey {userData ? userData.name : 'Developer'}, Welcome to Daily Session</h2>
-                    <p className='text-gray-600 mb-8 max-w-xl italic text-sm sm:text-base'>"Every time you show up and give your best, you’re proving to yourself that you’re capable of so much more than you ever imagined."</p>
+                    <h2 className='text-3xl sm:text-5xl font-semibold mb-4'>Hey {userData?.role === "admin" ? "Admin" : userData.name}, Welcome to {userData?.role === "admin" ? "Mannaging" : "Daily"}  Session</h2>
+                    <p className='text-gray-600 mb-8 max-w-xl italic text-sm sm:text-base'>
+                        {userData?.role === "admin" ? '"Here you can add or delete user workout details, upload the workout name, repetitions, description, workout image, and workout GIF. A white background leads to a better user experience."' :
+                            '"Every time you show up and give your best, you’re proving to yourself that you’re capable of so much more than you ever imagined."'}
+                    </p>
                 </div>
-                <div className='mt-6'>
-                    <div className="w-[130px] h-[130px] relative flex items-center justify-center text-center">
-                        <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
-                            <circle stroke="#e5e7eb" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
-                            <circle stroke="#ff5520" fill="transparent" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset }} r={normalizedRadius} cx={radius} cy={radius} />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#5d1be5]">
-                            {percentage}%
+                {
+                    userData?.role === "user" && (
+                        <div className='mt-6'>
+                            <div className="w-[130px] h-[130px] relative flex items-center justify-center text-center">
+                                <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
+                                    {/* Background circle */}
+                                    <circle
+                                        stroke="#e5e7eb"
+                                        fill="transparent"
+                                        strokeWidth={stroke}
+                                        r={normalizedRadius}
+                                        cx={radius}
+                                        cy={radius}
+                                    />
+                                    {/* Foreground progress circle */}
+                                    <circle
+                                        stroke="#ff5520"
+                                        fill="transparent"
+                                        strokeWidth={stroke}
+                                        strokeLinecap="round"
+                                        strokeDasharray={`${circumference} ${circumference}`}
+                                        strokeDashoffset={strokeDashoffset}
+                                        r={normalizedRadius}
+                                        cx={radius}
+                                        cy={radius}
+                                    />
+                                </svg>
+                                {/* Percentage text */}
+                                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#5d1be5]">
+                                    {`${Math.round(safeCompletion)}%`}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    )
+                }
+
 
             </div>
 
@@ -218,59 +319,88 @@ const DailySessions = () => {
                 </div>
                 {
                     workoutList && workoutList?.workouts && workoutList?.workouts.length != 0 ? <>
-                        {
-                            workoutList?.workouts.map((item, index) => (
-                                <div
-                                    key={index}
-                                    onClick={() => handleCardClick(index)}
-                                    className='relative w-full cursor-pointer max-w-5xl lg:max-w-7xl h-auto bg-gray-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 px-4 py-6 hover:bg-gray-200 mb-5 transition-all duration-300'
-                                >
-                                    <div className="flex-shrink-0">
-                                        <img className='w-[250px] h-[150px] rounded-xl object-cover' src={assets.pushup} alt="Pushup" />
-                                    </div>
-
-                                    <div className='flex-1 w-[250px] h-[150px]  bg-white rounded-xl flex flex-col items-center justify-center relative p-4'>
-                                        <h2 className='text-md sm:text-[22px] font-extrabold mb-2 text-center' style={{ letterSpacing: "5px", wordSpacing: "8px" }}>{item?.name}</h2>
-                                        <p className='text-gray-500 text-[12px] sm:text-sm max-w-[800px] italic text-center line-clamp-3 lg:line-clamp-2'>{item?.description}</p>
-                                        <div className='pt-8 lg:pt-5 w-full'>
-                                            <TbClockCancel size={22} color='gray' className='absolute bottom-3 left-3' />
-                                            <div className='absolute bottom-3 right-3 '>
-                                                <p className='text-gray-500 font-bold text-xs sm:text-sm'>REP : 15 / 3</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className='w-[250px]  md:w-[180px] h-[150px] rounded-xl bg-white flex flex-col items-center justify-center p-2'>
-                                        <h2 className='text-lg sm:text-xl font-semibold mb-4'>Task {index + 1}</h2>
-                                        <div className="flex items-center justify-center">
-                                            <button
-                                                onClick={(e) => handleToggle(e, index)}
-                                                className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out ${toggles[index] ? 'bg-purple-700' : 'bg-gray-400'}`}
-                                            >
-                                                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${toggles[index] ? 'translate-x-6' : ''}`} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {
-                                        userData?.role === "user" &&
-                                        <div className=' absolute top-4 right-4 font-extrabold cursor-pointer text-red-500'>
-                                            <FaTrash className='hover:scale-110' size={16} />
-                                        </div>
-                                    }
-
+                        {workoutList?.workouts.map((item, index) => (
+                            <div
+                                key={index}
+                                onClick={() => handleCardClick(index)}
+                                className='relative w-full cursor-pointer max-w-5xl lg:max-w-7xl h-auto bg-gray-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 px-4 py-6 hover:bg-gray-200 mb-5 opacity-0 animate-show'
+                                style={{ animationDelay: `${index * 0.2}s` }}
+                            >
+                                {/* Image */}
+                                <div className="flex-shrink-0">
+                                    <img className='w-[250px] h-[150px] rounded-xl object-cover' src={assets.pushup} alt="Pushup" />
                                 </div>
-                            ))
-                        }
+
+                                {/* Middle Content */}
+                                <div className='flex-1 w-[250px] h-[150px] bg-white rounded-xl flex flex-col items-center justify-center relative p-4'>
+                                    <h2 className='text-md sm:text-[22px] font-extrabold mb-2 text-center' style={{ letterSpacing: "5px", wordSpacing: "8px" }}>
+                                        {item?.name}
+                                    </h2>
+                                    <p className='text-gray-500 text-[12px] sm:text-sm max-w-[800px] italic text-center line-clamp-3 lg:line-clamp-2'>
+                                        {item?.description}
+                                    </p>
+                                    <div className='pt-8 lg:pt-5 w-full'>
+                                        <TbClockCancel size={22} color='gray' className='absolute bottom-3 left-3' />
+                                        <div className='absolute bottom-3 right-3'>
+                                            <p className='text-gray-500 font-bold text-xs sm:text-sm'>{item?.rep}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Side Toggle */}
+                                <div className='w-[250px] md:w-[180px] h-[150px] rounded-xl bg-white flex flex-col items-center justify-center p-2'>
+                                    <h2 className='text-lg sm:text-xl font-semibold mb-4'>Task {index + 1}</h2>
+                                    <div className="flex items-center justify-center">
+                                        {
+                                            userData?.role != "admin" ? (
+                                                <button
+                                                    onClick={(e) => handleToggle(e, index, item?._id)}
+                                                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out ${toggles[index] ? 'bg-purple-700' : 'bg-gray-400'
+                                                        }`}
+                                                >
+                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${toggles[index] ? 'translate-x-6' : ''
+                                                        }`} />
+                                                </button>
+                                            ) : (
+                                                <button disabled
+                                                    onClick={(e) => handleToggle(e, index)}
+                                                    className={`opacity-20 w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out ${toggles[index] ? 'bg-purple-700' : 'bg-gray-400'
+                                                        }`}
+                                                >
+                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${toggles[index] ? 'translate-x-6' : ''
+                                                        }`} />
+                                                </button>
+                                            )
+                                        }
+
+                                    </div>
+                                </div>
+
+                                {/* Trash Icon (for user role) */}
+                                {userData?.role === "admin" && (
+                                    <div
+                                        className='absolute top-4 right-4 font-extrabold cursor-pointer text-red-500 z-50'
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // ⛔ stop click from bubbling to parent
+                                            deleteWorkout(daySelectedIndex, item._id);
+                                        }}
+                                    >
+                                        <FaTrash className='hover:scale-110' size={16} />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
                     </> :
                         <>
                             <div className='flex items-center justify-between gap-7 '>
-                                <h2 className='text-xl sm:text-3xl font-semibold' style={{letterSpacing:"5px"}}>Nothing Found</h2>
+                                <h2 className='text-xl sm:text-3xl font-semibold' style={{ letterSpacing: "5px" }}>Nothing Found</h2>
                                 <PiMaskSadLight size={40} />
                             </div>
                         </>
                 }
                 {
-                    userData?.role === "user" &&
+                    userData?.role === "admin" &&
                     <div onClick={() => setShowFormPopup(true)} className='absolute bottom-1 lg:bottom-5 right-8 cursor-pointer  lg:right-10  text-[40px] lg:text-[46px] pt-6 lg:pt-2 text-[#5d1be5]'>
                         <BiSolidBookAdd className='hover:scale-110 ' />
                     </div>
@@ -289,7 +419,7 @@ const DailySessions = () => {
                             <button className="text-gray-500 hover:text-red-500 text-xl" onClick={() => setShowMessagePopup(false)}>✕</button>
                         </div>
                         <div className="mx-auto p-4 text-center bg-white">
-                            <h2 className="text-3xl font-bold text-[#5d1be5]">PUSH-UP</h2>
+                            <h2 className="text-3xl font-bold text-[#5d1be5]">{workoutList?.workouts[selectedIndex].name}</h2>
                         </div>
                         <div className='w-full flex flex-col lg:flex-row items-center justify-center bg-white'>
                             <div className='w-[70%] lg:w-[50%] p-3'>
@@ -301,14 +431,16 @@ const DailySessions = () => {
                                 </div>
                                 <div>
                                     <ol className='list-decimal list-inside text-gray-400 space-y-3'>
-                                        <li>Maintain a straight line from your head to your heels.</li>
-                                        <li>Place your hands slightly wider than shoulder-width apart.</li>
-                                        <li>Lower your body slowly until your chest is just above the ground.</li>
+                                        {
+                                            workoutList?.workouts[selectedIndex].inst.map((inItem, index) => (
+                                                <li className='line-clamp-2' key={index}>{inItem}</li>
+                                            ))
+                                        }
                                     </ol>
                                 </div>
                                 <div className='w-full flex items-center justify-between'>
-                                    <h2 className='text-xl font-bold text-gray-500'>
-                                        Repetitions: 15 / 3
+                                    <h2 className='text-xl font-bold text-gray-500 line-clamp-1'>
+                                        {workoutList?.workouts[selectedIndex].rep}
                                     </h2>
                                     <LuTimerReset size={20} color='gray' />
                                 </div>

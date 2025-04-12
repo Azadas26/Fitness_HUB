@@ -13,7 +13,9 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" />;
   }
 
-  if (allowedRoles.includes(userData.role)) {
+  console.log("role",userData?.role)
+
+  if (allowedRoles.includes(userData?.role)) {
     return <Outlet />;
   } else {
     return <Navigate to="/unauthorized" />;

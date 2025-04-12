@@ -4,6 +4,9 @@ import jsonwebtoken from 'jsonwebtoken'
 import transporter from '../config/modeMailer.js';
 import { EMAIL_VERIFY_TEMPLATE } from '../config/emailTemplate.js';
 import WorkoutList from '../models/WorkoutModel.js';
+import ActiveTask from '../models/ActiveTask.js';
+import ChatModel from '../models/Chat.model.js';
+import DoctorModel from '../models/Doctor.model.js';
 
 export const register = async (req, res) => {
     const { name, email, password } = req.body;
@@ -268,7 +271,9 @@ export const getUserDetails = async (req, res) => {
         if (!user) {
             return res.status(400).json({ success: false, message: "UserNot Available" })
         }
-        console.log(user.isAccountVerified);
+        //console.log(user.isAccountVerified);
+        console.log(user.role);
+
 
         return res.status(200).json({
             success: true, user: {
@@ -277,7 +282,7 @@ export const getUserDetails = async (req, res) => {
                 height: user.height,
                 weight: user.weight,
                 bmi: user.bmi,
-                role: "user",
+                role: user.role,
                 wrkpage: user.wrkpage,
             }, message: "User Found sucessfully"
         })
@@ -349,10 +354,12 @@ export const updateWorkPage = async (req, res) => {
 export const getUserWorkoutList = async (req, res) => {
     try {
         const { page } = req.params;
+        const { userId } = req.body;
 
-        // Assuming there's only one document that contains all workout days
+        console.log("PAge", page);
+
+
         const workoutDetails = await WorkoutList.findOne({});
-
         if (!workoutDetails) {
             return res.status(404).json({
                 success: false,
@@ -360,20 +367,39 @@ export const getUserWorkoutList = async (req, res) => {
             });
         }
 
-        
-        
+        const userWorkouts = workoutDetails.wkdays.find(item => item.day === page);
 
-        // Filter workouts for the specific day
-        const userWorkouts = workoutDetails.wkdays.filter(
-            (item) => item.day === page
-        );
+        if (!userWorkouts) {
+            return res.status(200).json({
+                success: false,
+                message: "No workouts for this day",
+            });
+        }
 
-        console.log(JSON.stringify(userWorkouts,null,2));
+        const activeTask = await ActiveTask.findOne({ userId });
+
+        const updatedWorkouts = userWorkouts.workouts.map(workout => {
+            const isActived = activeTask?.active?.some(
+                active => active.workoutsId.toString() === workout._id.toString() && active.day === page
+            );
+
+            return {
+                ...workout.toObject(), // Convert Mongoose object to plain JS object
+                isActived: !!isActived,
+            };
+        });
+
+        console.log("updatedWorkouts", updatedWorkouts);
+
 
         return res.status(200).json({
             success: true,
-            workouts: userWorkouts[0],
+            workouts: {
+                ...userWorkouts,
+                workouts: updatedWorkouts,
+            },
         });
+
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -381,4 +407,161 @@ export const getUserWorkoutList = async (req, res) => {
         });
     }
 };
+
+
+export const setUserTasks = async (req, res) => {
+    try {
+        const { wrkId, day } = req.params;
+        const { userId } = req.body;
+
+        const workoutList = await WorkoutList.findOne({});
+        if (!workoutList) {
+            return res.status(404).json({ message: "Workout List Not found" });
+        }
+
+        // FIXED condition
+        const isWorkoutExists = workoutList.wkdays.some(dayitem =>
+            dayitem.day === day && dayitem.workouts.some(w => w._id.toString() === wrkId)
+        );
+
+        if (!isWorkoutExists) {
+            return res.status(404).json({ message: "Workout Details Not found" });
+        }
+
+        const taskValue = {
+            day,
+            workoutsId: wrkId
+        };
+
+        const TaskList = await ActiveTask.findOne({ userId });
+
+        if (TaskList) {
+            const WorkoutIndex = TaskList.active.findIndex(
+                item => item.workoutsId.toString() === wrkId.toString() && item.day === day
+            );
+
+            if (WorkoutIndex === -1) {
+                TaskList.active.push(taskValue);
+                await TaskList.save();
+                return res.status(200).json({ message: "Completed" });
+            } else {
+                TaskList.active.splice(WorkoutIndex, 1);
+                await TaskList.save();
+                return res.status(200).json({ message: "Pending" });
+            }
+        } else {
+            const setTaskList = new ActiveTask({
+                userId,
+                active: [taskValue]
+            });
+
+            await setTaskList.save();
+            return res.status(200).json({ message: "Completed" });
+        }
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const assignDoctor = async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        // Check if chat already exists
+        const existingChat = await ChatModel.findOne({ userId });
+
+        if (existingChat) {
+            return res.status(200).json({ success: true, message: "Doctor already assigned" });
+        }
+
+        // Get list of available doctors
+        const doctorList = await UserModel.find({ role: "doctor" });
+
+        if (doctorList.length === 0) {
+            return res.status(404).json({ success: false, message: "No doctors found" });
+        }
+
+        // Pick random doctor
+        const randomDoctor = doctorList[Math.floor(Math.random() * doctorList.length)];
+
+        // Assign doctor and save chat
+        const newChat = new ChatModel({
+            userId,
+            doctorId: randomDoctor._id,
+            messages: [
+                {
+                    message: "Hello, dear. I am your personal doctor. How can I help you?",
+                    isdoctor: true
+                }
+            ]
+        });
+
+        await newChat.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Doctor assigned successfully",
+            doctorId: randomDoctor._id,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server Error",
+        });
+    }
+};
+
+export const getDoctorMessages = async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        const messageDetails = await ChatModel.findOne({ userId: userId }).populate("doctorId")
+        if (!messageDetails) {
+            return res.status(404).json({ success: false, message: "Nothing Found" })
+        }
+
+        return res.status(200).json({ success: true, messageDetails })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server Error",
+        });
+    }
+}
+
+export const sendDoctorMessages = async (req, res) => {
+    try {
+        const { userId, message } = req.body;
+
+        const messageDetails = await ChatModel.findOne({ userId: userId });
+        if (!messageDetails) {
+            return res.status(404).json({ success: false, message: "Nothing Found" })
+        }
+
+        console.log("messageDetails", messageDetails);
+
+
+
+        messageDetails.messages.push({
+            message,
+            isdoctor: false
+        })
+
+        await messageDetails.save()
+
+        return res.status(200).json({ success: true, message: "Message send successfully", text: { message: message, isdoctor: false } })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server Error",
+        });
+    }
+}
 

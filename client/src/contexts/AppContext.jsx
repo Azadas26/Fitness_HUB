@@ -28,6 +28,8 @@ export const AppContextProvider = ({ children }) => {
   const getUserData = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/user-details`, { withCredentials: true });
+      console.log("Userdata",data);
+      
       if (data.success) {
         setUserData(data.user);
       } else {

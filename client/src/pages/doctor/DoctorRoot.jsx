@@ -1,11 +1,12 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
+import NavBar from '../../components/NavBar'
 
 const DocrorRoot = () => {
   return (
     <>
-    <h1>doctor Root</h1>
-   <Outlet/>
+      <NavBar />
+      <Outlet />
     </>
   )
 }

@@ -7,15 +7,16 @@ import { errorAlert, successAlert } from '../../Alermessage';
 
 const NavBar = () => {
     const navigate = useNavigate();
-    const {backendUrl,
+    const { backendUrl,
         setIsLoggedin,
         userData,
         setUserData,
-         } = useContext(AppContent);
+    } = useContext(AppContent);
+    
 
-    const logout = async ()=>{
+    const logout = async () => {
         try {
-            const {data} = await axios.get(`${backendUrl}/logout`,{withCredentials:true});
+            const { data } = await axios.get(`${backendUrl}/logout`, { withCredentials: true });
             navigate('/login')
             setIsLoggedin(false)
             setUserData(false)
@@ -24,7 +25,7 @@ const NavBar = () => {
         }
     }
 
-  
+
 
     return (
         <div className='w-full flex justify-between items-center p-4 px-6 sm:px-16 absolute top-0  z-50'>
@@ -40,9 +41,9 @@ const NavBar = () => {
                     {/* Dropdown */}
                     <div className=' hidden group-hover:flex flex-col absolute right-0  bg-white shadow-lg border rounded-lg'>
                         <ul className='text-black text-sm list-none m-0 p-2'>
-                            
 
-                            <li onClick={()=>logout()} className='px-2 py-1 hover:bg-gray-200 cursor-pointer'>Logout</li>
+                            {userData?.role === "admin" && <li onClick={() => navigate("/admin/addDoctor")} className='px-2 py-1 hover:bg-gray-200 cursor-pointer'>Add Doctor</li>}
+                            <li onClick={() => logout()} className='px-2 py-1 hover:bg-gray-200 cursor-pointer'>Logout</li>
                         </ul>
                     </div>
                 </div>
