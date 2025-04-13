@@ -30,7 +30,7 @@ const App = () => {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<ProtectedRoute allowedRoles={['user', 'admin','doctor']} />}>
+          <Route path="/" element={<ProtectedRoute allowedRoles={['user', 'admin', 'doctor']} />}>
             <Route path="/" element={<Home />}>
               <Route index element={<FirstPage />} />
               <Route path="user" element={<UserHome />} />
@@ -46,8 +46,8 @@ const App = () => {
           </Route>
 
           <Route path="login" element={<Login />} />
-          <Route path="email-verify" element={<EmailVerification />} />
-          <Route path="reset-password" element={<ResetPassword />} />
+          {/* <Route path="email-verify" element={<EmailVerification />} />
+          <Route path="reset-password" element={<ResetPassword />} /> */}
 
           {/* Unauthorized Route */}
           <Route path="/unauthorized" element={<Unauthorized />} />

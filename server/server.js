@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import UserRouter from './routes/userRoute.js';
 import AdminRouter from './routes/AdminRoute.js';
 import DoctorRouter from './routes/doctor.route.js'
+import { runAdminSetup } from './middlewares/AdminSetup.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -26,10 +27,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // 🔥 Serve uploaded images
-app.use('/uploads/doctors', express.static(path.join(__dirname, 'uploads/doctors')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Connect to DB
-connectDB();
+connectDB().then(runAdminSetup)
 
 // Routes
 app.use('/', UserRouter);

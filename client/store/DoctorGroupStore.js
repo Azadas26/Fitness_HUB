@@ -6,6 +6,7 @@ import { create } from 'zustand';
 export const DoctorChatCommunity = create((set, get) => ({
     doctorClients: [],
     ClientMessages: [],
+    setectedUser:null,
 
     getClients: async (backendUrl) => {
         try {

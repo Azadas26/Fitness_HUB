@@ -15,14 +15,18 @@ export const addWorkoutList = async (req, res) => {
     } = req.body;
     const { day } = req.params;
 
-    // Find existing WorkoutList for 'admin' or create a new one
+    // Extract uploaded file names
+    const workoutImage = req.files?.workoutImage?.[0]?.filename || null;
+    const workoutGif = req.files?.workoutGif?.[0]?.filename || null;
+
+    // Find or create workout list for 'admin'
     let workoutDetails = await WorkoutList.findOne({ author: "admin" });
 
     if (!workoutDetails) {
       workoutDetails = new WorkoutList({ author: "admin", wkdays: [] });
     }
 
-    // Check if day already exists in wkdays
+    // Check if the day exists
     const existingDay = workoutDetails.wkdays.find((d) => d.day === day);
 
     const workoutData = {
@@ -30,13 +34,15 @@ export const addWorkoutList = async (req, res) => {
       inst: [instruction1, instruction2, instruction3].filter(Boolean),
       rep: repetitions,
       description,
+      workoutImage,
+      workoutGif,
     };
 
     if (existingDay) {
-      // Push into existing day
+      // Add workout to existing day
       existingDay.workouts.push(workoutData);
     } else {
-      // Create new day with first workout
+      // Create new day entry
       workoutDetails.wkdays.push({
         day,
         workouts: [workoutData],
@@ -53,6 +59,7 @@ export const addWorkoutList = async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
+
 
 export const deleteWorkout = async (req, res) => {
   try {
@@ -105,7 +112,7 @@ export const addDoctor = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({ success: false, message: `This ${email} Already registered` })
     }
-   
+
     const newDoctor = new DoctorModel({
       name,
       email,

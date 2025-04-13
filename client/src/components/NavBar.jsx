@@ -30,7 +30,7 @@ const NavBar = () => {
     return (
         <div className='w-full flex justify-between items-center p-4 px-6 sm:px-16 absolute top-0  z-50'>
             {/* Logo */}
-            <img src={assets.logo} alt="Logo" className='w-28 sm:w-32 cursor-pointer' onClick={() => navigate('/')} />
+            <img src={assets.mainlogo} alt="Logo" className='w-16 sm:w-16 cursor-pointer' onClick={() => navigate('/')} />
 
             {/* User Section */}
             {userData ? (

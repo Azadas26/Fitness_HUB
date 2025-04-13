@@ -122,7 +122,7 @@ const AddDoctor = () => {
                                     <div className='w-full text-center'>
                                         <h2 className='text-xl font-semibold text-gray-700'>Dr. {doctor.name}</h2>
                                         <h3 className='text-md text-gray-600'>{doctor.email}</h3>
-                                        <p className='text-sm text-gray-500'>{doctor.bio}</p>
+                                        <p className='text-sm text-gray-500 line-clamp-3'>{doctor.bio}</p>
                                     </div>
                                 </div>
                                 <div className='absolute top-3 right-3 text-gray-900 cursor-pointer'>

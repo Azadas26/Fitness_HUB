@@ -14,6 +14,10 @@ import welcome2 from './welcome2.png'
 import welcome3 from './welcome3.png'
 import pushup from './pushup.png'
 import pushupGif from './pushupgif.gif'
+import doctor from './doctor.png'
+import admin from './Admin.png'
+import userimg from './userimg.png'
+import mainlogo from './mainlogo.png'
 
 export const assets = {
     arrow_icon,
@@ -31,5 +35,9 @@ export const assets = {
     welcome2,
     welcome3,
     pushup,
-    pushupGif
+    pushupGif,
+    doctor,
+    admin,
+    userimg,
+    mainlogo
 }

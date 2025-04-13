@@ -120,14 +120,33 @@ const DailySessions = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        //console.log("data data", formData, daySelectedIndex);
 
         try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("workoutName", formData.workoutName);
+            formDataToSend.append("instruction1", formData.instruction1);
+            formDataToSend.append("instruction2", formData.instruction2);
+            formDataToSend.append("instruction3", formData.instruction3);
+            formDataToSend.append("repetitions", formData.repetitions);
+            formDataToSend.append("description", formData.description);
+            if (formData.workoutImage) {
+                formDataToSend.append("workoutImage", formData.workoutImage);
+            }
+            if (formData.workoutGif) {
+                formDataToSend.append("workoutGif", formData.workoutGif);
+            }
+
             const { data } = await axios.post(
                 `${backendUrl}/admin/addWorkoutList/${daySelectedIndex}`,
-                formData, { withCredentials: true }
+                formDataToSend,
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
             );
-            // console.log("dddd", data); // ✅ Success message
+
             setFormData({
                 workoutName: "",
                 instruction1: "",
@@ -137,17 +156,17 @@ const DailySessions = () => {
                 description: "",
                 workoutImage: null,
                 workoutGif: null,
-            })
+            });
 
-            toast.success(data?.message)
-            setDrefresh(!Drefresh)
-            setShowFormPopup(false)
+            toast.success(data?.message);
+            setDrefresh(!Drefresh);
+            setShowFormPopup(false);
 
         } catch (error) {
             console.log(error);
-
         }
     };
+
 
     const userchoosenDau = async (index) => {
         setDaySelectedIndex(index)
@@ -328,7 +347,7 @@ const DailySessions = () => {
                             >
                                 {/* Image */}
                                 <div className="flex-shrink-0">
-                                    <img className='w-[250px] h-[150px] rounded-xl object-cover' src={assets.pushup} alt="Pushup" />
+                                    <img className='w-[250px] h-[150px] rounded-xl object-cover' src={`${backendUrl}/uploads/workouts/${item?.workoutImage}`} alt="Pushup" />
                                 </div>
 
                                 {/* Middle Content */}
@@ -423,7 +442,7 @@ const DailySessions = () => {
                         </div>
                         <div className='w-full flex flex-col lg:flex-row items-center justify-center bg-white'>
                             <div className='w-[70%] lg:w-[50%] p-3'>
-                                <img src={assets.pushupGif} className='w-full h-auto' alt="Push-up" />
+                                <img src={`${backendUrl}/uploads/workouts/${workoutList?.workouts[selectedIndex].workoutGif}`} className='w-full h-auto' alt="Push-up" />
                             </div>
                             <div className='w-[70%] lg:w-[50%] p-3 flex flex-col items-center justify-center gap-5'>
                                 <div>
@@ -433,7 +452,7 @@ const DailySessions = () => {
                                     <ol className='list-decimal list-inside text-gray-400 space-y-3'>
                                         {
                                             workoutList?.workouts[selectedIndex].inst.map((inItem, index) => (
-                                                <li className='line-clamp-2' key={index}>{inItem}</li>
+                                                <li className='line-clamp-2' key={index}>{index + 1}. {inItem}</li>
                                             ))
                                         }
                                     </ol>

@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 const Login = () => {
   const [state, setState] = useState('Sign Up');
-  const { backendUrl, setIsLoggedin, getUserData,isLoggedin,userData} = useContext(AppContent)
+  const { backendUrl, setIsLoggedin, getUserData, isLoggedin, userData } = useContext(AppContent)
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
@@ -24,7 +24,7 @@ const Login = () => {
         if (data.success) {
           setIsLoggedin(true);
           getUserData()
-          navigate('/email-verify')
+          navigate('/')
         } else {
           errorAlert(data.message);
         }
@@ -44,7 +44,7 @@ const Login = () => {
       }
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error && error.response.data.error.details) {
-        
+
         errorAlert(error.response.data.error.details[0].message)
       }
       else {
@@ -55,14 +55,14 @@ const Login = () => {
 
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     isLoggedin && userData && navigate('/')
-  },[userData,isLoggedin])
+  }, [userData, isLoggedin])
 
 
   return (
     <div className='flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-purple-400'>
-      <img className='absolute left-5 sm:left-20 top-5 w-28 sm:w-32 cursor-pointer' src={assets.logo} alt="" />
+      <img className='absolute left-5 sm:left-20 top-5 w-16 sm:w-16 cursor-pointer' src={assets.mainlogo} alt="" />
 
       <div className='bg-slate-900 p-10 rounded-lg shadow-lg w-[90%] sm:w-96 text-indigo-300 text-sm'>
         <h2 className='text-3xl font-semibold text-white text-center mb-3'>{state === 'Sign Up' ? 'Create Account' : 'Login'}</h2>
@@ -89,7 +89,7 @@ const Login = () => {
           </div>
 
           {
-            state !== 'Sign Up' && <p onClick={()=>navigate('/reset-password')} className='mb-4 text-indigo-500 cursor-pointer hover:underline underline-offset-1'>Forgot pasword</p>
+            state !== 'Sign Up' && <p onClick={() => navigate('/reset-password')} className='mb-4 text-indigo-500 cursor-pointer hover:underline underline-offset-1'>Forgot pasword</p>
           }
 
           <button className='w-full p-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 text-white font-medium'>{state}</button>

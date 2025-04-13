@@ -467,6 +467,15 @@ export const setUserTasks = async (req, res) => {
     }
 };
 
+const shuffleArray = (array) => {
+    let shuffledArray = [...array]; // Copy to avoid mutating the original array
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; // Swap
+    }
+    return shuffledArray;
+};
+
 export const assignDoctor = async (req, res) => {
     try {
         const { userId } = req.body;
@@ -475,18 +484,29 @@ export const assignDoctor = async (req, res) => {
         const existingChat = await ChatModel.findOne({ userId });
 
         if (existingChat) {
-            return res.status(200).json({ success: true, message: "Doctor already assigned" });
+            return res.status(200).json({
+                success: true,
+                message: "Doctor already assigned",
+                doctorId: existingChat.doctorId, // Optionally return the already assigned doctorId
+            });
         }
 
         // Get list of available doctors
-        const doctorList = await UserModel.find({ role: "doctor" });
+        const doctorList = await UserModel.find({ role: "doctor" }).exec();
+
+        console.log("doctorList", doctorList);
 
         if (doctorList.length === 0) {
             return res.status(404).json({ success: false, message: "No doctors found" });
         }
 
-        // Pick random doctor
-        const randomDoctor = doctorList[Math.floor(Math.random() * doctorList.length)];
+        // Shuffle doctor list for better randomness
+        const shuffledDoctorList = shuffleArray(doctorList);
+
+        // Pick the first doctor after shuffling
+        const randomDoctor = shuffledDoctorList[0];
+
+        console.log("randomDoctor", randomDoctor);
 
         // Assign doctor and save chat
         const newChat = new ChatModel({
@@ -509,6 +529,7 @@ export const assignDoctor = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Error assigning doctor:", error);
         return res.status(500).json({
             success: false,
             message: error.message || "Server Error",

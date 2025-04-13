@@ -20,13 +20,15 @@ const WorkoutSchema = new Schema(
                                 inst: [{ type: String }],
                                 rep: { type: String, required: true },
                                 description: { type: String, required: true },
+                                workoutImage: { type: String, default: null }, // ✅ image filename
+                                workoutGif: { type: String, default: null },   // ✅ gif filename
                             },
                         ],
                         default: [],
                     },
                 },
             ],
-            default: [], 
+            default: [],
         },
     },
     { timestamps: true }
